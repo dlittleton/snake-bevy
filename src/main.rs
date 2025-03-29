@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{
+        RenderPlugin,
+        settings::{Backends, RenderCreation, WgpuSettings},
+    },
+};
 
 fn hello_world() {
     println!("hello world!");
@@ -24,7 +30,13 @@ fn greet_people(query: Query<&Name, With<Person>>) {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(RenderPlugin {
+            render_creation: RenderCreation::Automatic(WgpuSettings {
+                backends: Some(Backends::DX12),
+                ..default()
+            }),
+            ..default()
+        }))
         .add_systems(Startup, add_people)
         .add_systems(Update, (hello_world, greet_people))
         .run();
