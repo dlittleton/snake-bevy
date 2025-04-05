@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 
+use crate::colors::GameColors;
+
 pub struct MenuPlugin;
 
 const MENU_FONT_SIZE: f32 = 32.0;
-const FONT_COLOR: Color = Color::srgb(0.0, 0.8, 0.0);
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
@@ -36,7 +37,7 @@ fn add_menu(mut commands: Commands) {
                             font_size: MENU_FONT_SIZE,
                             ..default()
                         },
-                        TextColor(FONT_COLOR),
+                        TextColor(GameColors::PRIMARY),
                     ));
 
                     p.spawn((
@@ -45,6 +46,7 @@ fn add_menu(mut commands: Commands) {
                             font_size: MENU_FONT_SIZE,
                             ..default()
                         },
+                        TextColor(GameColors::PRIMARY),
                     ));
                 });
         });

@@ -1,3 +1,4 @@
+pub mod colors;
 pub mod menu;
 
 use bevy::{
@@ -7,6 +8,7 @@ use bevy::{
         settings::{Backends, RenderCreation, WgpuSettings},
     },
 };
+use colors::GameColors;
 use menu::MenuPlugin;
 
 fn setup(mut commands: Commands) {
@@ -22,7 +24,8 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(MenuPlugin)
         .add_systems(Startup, setup)
+        .insert_resource(ClearColor(GameColors::BACKGROUND))
+        .add_plugins(MenuPlugin)
         .run();
 }
