@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::colors::GameColors;
+use crate::{colors::GameColors, score::Score};
 
 pub struct MenuPlugin;
 
@@ -12,7 +12,27 @@ impl Plugin for MenuPlugin {
     }
 }
 
-fn add_menu(mut commands: Commands) {
+#[derive(Bundle)]
+struct TextBundle(Text, TextFont, TextColor);
+
+impl TextBundle {
+    fn new(text: impl Into<String>) -> Self {
+        Self(
+            Text::new(text),
+            TextFont {
+                font_size: MENU_FONT_SIZE,
+                ..default()
+            },
+            TextColor(GameColors::PRIMARY),
+        )
+    }
+
+    fn hr() -> Self {
+        Self::new("------------------------------------------------------------")
+    }
+}
+
+fn add_menu(mut commands: Commands, score: Res<Score>) {
     commands
         .spawn(Node {
             // General screen container to center children
@@ -31,23 +51,12 @@ fn add_menu(mut commands: Commands) {
                     ..default()
                 },))
                 .with_children(|p| {
-                    p.spawn((
-                        Text::new("Press space to start..."),
-                        TextFont {
-                            font_size: MENU_FONT_SIZE,
-                            ..default()
-                        },
-                        TextColor(GameColors::PRIMARY),
-                    ));
-
-                    p.spawn((
-                        Text::new("More Text?"),
-                        TextFont {
-                            font_size: MENU_FONT_SIZE,
-                            ..default()
-                        },
-                        TextColor(GameColors::PRIMARY),
-                    ));
+                    p.spawn(TextBundle::new("Snake"));
+                    p.spawn(TextBundle::hr());
+                    p.spawn(TextBundle::new(format!("High Score: {}", score.best)));
+                    p.spawn(TextBundle::new(format!("Last Round: {}", score.current)));
+                    p.spawn(TextBundle::hr());
+                    p.spawn(TextBundle::new("Press space to start..."));
                 });
         });
 }

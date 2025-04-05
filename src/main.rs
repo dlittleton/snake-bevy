@@ -1,5 +1,6 @@
 pub mod colors;
 pub mod menu;
+pub mod score;
 
 use bevy::{
     prelude::*,
@@ -10,6 +11,7 @@ use bevy::{
 };
 use colors::GameColors;
 use menu::MenuPlugin;
+use score::Score;
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -26,6 +28,10 @@ fn main() {
         }))
         .add_systems(Startup, setup)
         .insert_resource(ClearColor(GameColors::BACKGROUND))
+        .insert_resource(Score {
+            current: 0,
+            best: 0,
+        })
         .add_plugins(MenuPlugin)
         .run();
 }
