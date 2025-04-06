@@ -1,5 +1,7 @@
 mod grid;
 
+use std::collections::VecDeque;
+
 use bevy::prelude::*;
 use grid::Grid;
 
@@ -11,7 +13,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(GameState::Playing),
-            (init_game, spawn_walls, game_setup).chain(),
+            (init_game, spawn_walls, spawn_snake, game_setup).chain(),
         );
         app.add_systems(
             Update,
@@ -27,6 +29,7 @@ struct GameTimer(Timer);
 const CELL_SIZE: f32 = 10.0;
 const INITIAL_LENGTH: usize = 5;
 const INITIAL_DIRECTION: Direction = Direction::Right;
+const INITIAL_SNAKE_X: usize = 5;
 
 #[derive(Clone, Copy, Debug)]
 enum CellContents {
@@ -44,6 +47,37 @@ enum Direction {
     Right,
 }
 
+#[derive(Component)]
+struct Position(usize, usize);
+
+#[derive(Bundle)]
+struct CellBundle(StateScoped<GameState>, Position, Sprite, Transform);
+
+impl CellBundle {
+    fn new(contents: CellContents, x: usize, y: usize, game: &Game) -> Self {
+        Self(
+            StateScoped(GameState::Playing),
+            Position(x, y),
+            Sprite::from_color(
+                match contents {
+                    CellContents::Food => GameColors::FOOD,
+                    CellContents::Snake => GameColors::PRIMARY,
+                    CellContents::Wall => GameColors::WALL,
+                    CellContents::Empty => {
+                        assert!(false, "Empty cell contents not expected to be spawned");
+                        GameColors::BACKGROUND
+                    }
+                },
+                Vec2::new(CELL_SIZE, CELL_SIZE),
+            ),
+            Transform {
+                translation: game.get_coords(x, y).extend(1.0),
+                ..default()
+            },
+        )
+    }
+}
+
 #[derive(Resource)]
 struct Game {
     grid: Grid<CellContents>,
@@ -51,6 +85,7 @@ struct Game {
     max_length: usize,
     current_direction: Direction,
     next_direction: Direction,
+    snake: VecDeque<Entity>,
 }
 
 impl Game {
@@ -79,6 +114,7 @@ impl Game {
             max_length: INITIAL_LENGTH,
             current_direction: INITIAL_DIRECTION,
             next_direction: INITIAL_DIRECTION,
+            snake: VecDeque::new(),
         }
     }
 
@@ -110,16 +146,20 @@ fn init_game(mut commands: Commands, window_query: Query<&Window>) {
 fn spawn_walls(mut commands: Commands, game: Res<Game>) {
     for (x, y, c) in game.grid.enumerate() {
         if matches!(c, CellContents::Wall) {
-            commands.spawn((
-                StateScoped(GameState::Playing),
-                Sprite::from_color(GameColors::WALL, Vec2::new(CELL_SIZE, CELL_SIZE)),
-                Transform {
-                    translation: game.get_coords(x, y).extend(1.0),
-                    ..default()
-                },
-            ));
+            commands.spawn(CellBundle::new(CellContents::Wall, x, y, &game));
         }
     }
+}
+
+fn spawn_snake(mut commands: Commands, mut game: ResMut<Game>) {
+    let x = INITIAL_SNAKE_X;
+    let y = game.grid.height() / 2;
+
+    let entity = commands
+        .spawn(CellBundle::new(CellContents::Snake, x, y, &game))
+        .id();
+
+    game.snake.push_back(entity);
 }
 
 fn read_input(keyboard_input: Res<ButtonInput<KeyCode>>, mut game: ResMut<Game>) {
