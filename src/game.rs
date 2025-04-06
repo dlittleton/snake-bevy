@@ -1,7 +1,5 @@
 mod grid;
 
-use std::cell::Cell;
-
 use bevy::prelude::*;
 use grid::Grid;
 
@@ -35,6 +33,7 @@ enum CellContents {
 #[derive(Resource)]
 struct Game {
     grid: Grid<CellContents>,
+    middle: Vec2,
 }
 
 impl Game {
@@ -42,30 +41,31 @@ impl Game {
         let mut grid = Grid::new(width, height, CellContents::Empty);
 
         // Setup walls
-        for x in (0..width) {
+        for x in 0..width {
             *grid.get_mut(x, 0) = CellContents::Wall;
             *grid.get_mut(x, height - 1) = CellContents::Wall;
         }
 
-        for y in (0..height) {
+        for y in 0..height {
             *grid.get_mut(0, y) = CellContents::Wall;
             *grid.get_mut(width - 1, y) = CellContents::Wall;
         }
 
-        Self { grid }
+        let middle = Vec2 {
+            x: (width - 1) as f32 * CELL_SIZE / 2.0,
+            y: (height - 1) as f32 * CELL_SIZE / 2.0,
+        };
+
+        Self { grid, middle }
     }
 
     fn get_coords(&self, x: usize, y: usize) -> Vec2 {
-        let xpos = x as f32 * CELL_SIZE;
-        let ypos = y as f32 * CELL_SIZE;
+        let pos = Vec2 {
+            x: x as f32 * CELL_SIZE,
+            y: y as f32 * CELL_SIZE,
+        };
 
-        let midx = (self.grid.width() as f32 * CELL_SIZE) / 2.0;
-        let midy = (self.grid.height() as f32 * CELL_SIZE) / 2.0;
-
-        Vec2 {
-            x: xpos - midx,
-            y: ypos - midy,
-        }
+        pos - self.middle
     }
 }
 
@@ -99,7 +99,7 @@ fn spawn_walls(mut commands: Commands, game: Res<Game>) {
     }
 }
 
-fn game_setup(mut commands: Commands, window_query: Query<&Window>) {
+fn game_setup(mut commands: Commands) {
     commands.spawn((StateScoped(GameState::Playing), Text::new("Running game")));
     commands.insert_resource(GameTimer(Timer::from_seconds(2.0, TimerMode::Once)));
     commands.spawn((
