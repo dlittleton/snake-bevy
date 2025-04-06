@@ -14,6 +14,7 @@ impl Plugin for GamePlugin {
             (init_game, spawn_walls, game_setup).chain(),
         );
         app.add_systems(Update, check_timer.run_if(in_state(GameState::Playing)));
+        app.add_systems(OnExit(GameState::Playing), save_score);
     }
 }
 
@@ -21,6 +22,7 @@ impl Plugin for GamePlugin {
 struct GameTimer(Timer);
 
 const CELL_SIZE: f32 = 10.0;
+const INITIAL_LENGTH: usize = 5;
 
 #[derive(Clone, Copy, Debug)]
 enum CellContents {
@@ -34,6 +36,7 @@ enum CellContents {
 struct Game {
     grid: Grid<CellContents>,
     middle: Vec2,
+    max_length: usize,
 }
 
 impl Game {
@@ -56,7 +59,11 @@ impl Game {
             y: (height - 1) as f32 * CELL_SIZE / 2.0,
         };
 
-        Self { grid, middle }
+        Self {
+            grid,
+            middle,
+            max_length: INITIAL_LENGTH,
+        }
     }
 
     fn get_coords(&self, x: usize, y: usize) -> Vec2 {
@@ -100,22 +107,24 @@ fn spawn_walls(mut commands: Commands, game: Res<Game>) {
 }
 
 fn game_setup(mut commands: Commands) {
-    commands.spawn((StateScoped(GameState::Playing), Text::new("Running game")));
     commands.insert_resource(GameTimer(Timer::from_seconds(2.0, TimerMode::Once)));
-    commands.spawn((
-        StateScoped(GameState::Playing),
-        Sprite::from_color(GameColors::PRIMARY, Vec2::new(20.0, 20.0)),
-    ));
 }
 
 fn check_timer(
     mut game_state: ResMut<NextState<GameState>>,
     time: Res<Time>,
     mut timer: ResMut<GameTimer>,
-    mut score: ResMut<Score>,
 ) {
     if timer.tick(time.delta()).finished() {
         game_state.set(GameState::Menu);
-        score.current += 1;
     }
+}
+
+fn save_score(mut score: ResMut<Score>, game: Res<Game>) {
+    info!("Saving score.");
+    let round = game.max_length;
+
+    score.current = round;
+    score.best = round.max(score.best);
+    info!("Score updated {:?}", score);
 }
