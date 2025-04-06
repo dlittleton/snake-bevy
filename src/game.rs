@@ -13,7 +13,10 @@ impl Plugin for GamePlugin {
             OnEnter(GameState::Playing),
             (init_game, spawn_walls, game_setup).chain(),
         );
-        app.add_systems(Update, check_timer.run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            Update,
+            (read_input, check_timer).run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(OnExit(GameState::Playing), save_score);
     }
 }
@@ -23,6 +26,7 @@ struct GameTimer(Timer);
 
 const CELL_SIZE: f32 = 10.0;
 const INITIAL_LENGTH: usize = 5;
+const INITIAL_DIRECTION: Direction = Direction::Right;
 
 #[derive(Clone, Copy, Debug)]
 enum CellContents {
@@ -32,11 +36,21 @@ enum CellContents {
     Food,
 }
 
+#[derive(Debug)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
 #[derive(Resource)]
 struct Game {
     grid: Grid<CellContents>,
     middle: Vec2,
     max_length: usize,
+    current_direction: Direction,
+    next_direction: Direction,
 }
 
 impl Game {
@@ -63,6 +77,8 @@ impl Game {
             grid,
             middle,
             max_length: INITIAL_LENGTH,
+            current_direction: INITIAL_DIRECTION,
+            next_direction: INITIAL_DIRECTION,
         }
     }
 
@@ -106,6 +122,26 @@ fn spawn_walls(mut commands: Commands, game: Res<Game>) {
     }
 }
 
+fn read_input(keyboard_input: Res<ButtonInput<KeyCode>>, mut game: ResMut<Game>) {
+    if keyboard_input.any_just_pressed([KeyCode::KeyW, KeyCode::ArrowUp])
+        && !matches!(game.current_direction, Direction::Down)
+    {
+        game.next_direction = Direction::Up;
+    } else if keyboard_input.any_just_pressed([KeyCode::KeyA, KeyCode::ArrowLeft])
+        && !matches!(game.current_direction, Direction::Right)
+    {
+        game.next_direction = Direction::Left;
+    } else if keyboard_input.any_just_pressed([KeyCode::KeyS, KeyCode::ArrowDown])
+        && !matches!(game.current_direction, Direction::Up)
+    {
+        game.next_direction = Direction::Down;
+    } else if keyboard_input.any_just_pressed([KeyCode::KeyD, KeyCode::ArrowRight])
+        && !matches!(game.current_direction, Direction::Left)
+    {
+        game.next_direction = Direction::Right;
+    }
+}
+
 fn game_setup(mut commands: Commands) {
     commands.insert_resource(GameTimer(Timer::from_seconds(2.0, TimerMode::Once)));
 }
@@ -127,4 +163,5 @@ fn save_score(mut score: ResMut<Score>, game: Res<Game>) {
     score.current = round;
     score.best = round.max(score.best);
     info!("Score updated {:?}", score);
+    info!("Direction is {:?}", game.next_direction);
 }
