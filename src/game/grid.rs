@@ -29,10 +29,6 @@ impl<T> Grid<T> {
         &mut self.values[x][y]
     }
 
-    pub fn width(&self) -> usize {
-        self.values.len()
-    }
-
     pub fn height(&self) -> usize {
         self.values[0].len()
     }

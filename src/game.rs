@@ -13,12 +13,9 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(GameState::Playing),
-            (init_game, spawn_walls, spawn_snake, game_setup).chain(),
+            (init_game, spawn_walls, spawn_snake).chain(),
         );
-        app.add_systems(
-            Update,
-            (read_input, check_timer).run_if(in_state(GameState::Playing)),
-        );
+        app.add_systems(Update, read_input.run_if(in_state(GameState::Playing)));
         app.add_systems(
             FixedUpdate,
             (despawn_tail, move_snake)
@@ -29,9 +26,6 @@ impl Plugin for GamePlugin {
         app.insert_resource(Time::<Fixed>::from_seconds(0.1));
     }
 }
-
-#[derive(Resource, Deref, DerefMut)]
-struct GameTimer(Timer);
 
 const CELL_SIZE: f32 = 10.0;
 const INITIAL_LENGTH: usize = 5;
@@ -257,20 +251,6 @@ fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
         .id();
 
     game.snake.push_back(entity);
-}
-
-fn game_setup(mut commands: Commands) {
-    commands.insert_resource(GameTimer(Timer::from_seconds(10.0, TimerMode::Once)));
-}
-
-fn check_timer(
-    mut game_state: ResMut<NextState<GameState>>,
-    time: Res<Time>,
-    mut timer: ResMut<GameTimer>,
-) {
-    if timer.tick(time.delta()).finished() {
-        game_state.set(GameState::Menu);
-    }
 }
 
 fn save_score(mut score: ResMut<Score>, game: Res<Game>) {
