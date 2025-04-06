@@ -19,7 +19,12 @@ impl Plugin for GamePlugin {
             Update,
             (read_input, check_timer).run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(FixedUpdate, move_snake.run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            FixedUpdate,
+            (despawn_tail, move_snake)
+                .chain()
+                .run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(OnExit(GameState::Playing), save_score);
         app.insert_resource(Time::<Fixed>::from_seconds(0.1));
     }
@@ -152,6 +157,16 @@ impl Game {
 
         contents
     }
+
+    fn clear_position(&mut self, x: usize, y: usize) {
+        let p = self.grid.get_mut(x, y);
+        assert!(
+            matches!(p, CellContents::Snake),
+            "Expected cleared cell to be a snake"
+        );
+
+        *p = CellContents::Empty;
+    }
 }
 
 fn init_game(mut commands: Commands, window_query: Query<&Window>) {
@@ -214,11 +229,28 @@ fn read_input(keyboard_input: Res<ButtonInput<KeyCode>>, mut game: ResMut<Game>)
     }
 }
 
+fn despawn_tail(mut commands: Commands, mut game: ResMut<Game>, pos_query: Query<&Position>) {
+    while game.snake.len() > game.max_length {
+        let tail = game.snake.pop_front().unwrap(); // length checked above
+
+        if let Ok(Position(x, y)) = pos_query.get(tail) {
+            game.clear_position(*x, *y);
+        }
+
+        commands.entity(tail).despawn();
+    }
+}
+
 fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
     let Position(x, y) = game.head.get_next_position(game.next_direction);
     game.current_direction = game.next_direction;
 
-    game.move_snake(x, y);
+    let contents = game.move_snake(x, y);
+    if matches!(contents, CellContents::Snake | CellContents::Wall) {
+        // Collision. Game over!
+        commands.set_state(GameState::Menu);
+        return;
+    }
 
     let entity = commands
         .spawn(CellBundle::new(CellContents::Snake, x, y, &game))
