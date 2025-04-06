@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{score::Score, state::GameState};
+use crate::{colors::GameColors, score::Score, state::GameState};
 
 pub struct GamePlugin;
 
@@ -14,10 +14,18 @@ impl Plugin for GamePlugin {
 #[derive(Resource, Deref, DerefMut)]
 struct GameTimer(Timer);
 
-fn game_setup(mut commands: Commands) {
+fn game_setup(mut commands: Commands, window_query: Query<&Window>) {
     info!("Setting up game state");
+
+    let window = window_query.single();
+    info!("Window size is {} x {}", window.width(), window.height());
+
     commands.spawn((StateScoped(GameState::Playing), Text::new("Running game")));
     commands.insert_resource(GameTimer(Timer::from_seconds(2.0, TimerMode::Once)));
+    commands.spawn((
+        StateScoped(GameState::Playing),
+        Sprite::from_color(GameColors::PRIMARY, Vec2::new(20.0, 20.0)),
+    ));
 }
 
 fn check_timer(
