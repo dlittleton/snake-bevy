@@ -77,10 +77,7 @@ impl CellBundle {
                     CellContents::Food => GameColors::FOOD,
                     CellContents::Snake => GameColors::PRIMARY,
                     CellContents::Wall => GameColors::WALL,
-                    CellContents::Empty => {
-                        assert!(false, "Empty cell contents not expected to be spawned");
-                        GameColors::BACKGROUND
-                    }
+                    CellContents::Empty => panic!("Attempt to spawn cell contents"),
                 },
                 Vec2::new(CELL_SIZE, CELL_SIZE),
             ),
