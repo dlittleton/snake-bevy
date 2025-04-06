@@ -19,7 +19,9 @@ impl Plugin for GamePlugin {
             Update,
             (read_input, check_timer).run_if(in_state(GameState::Playing)),
         );
+        app.add_systems(FixedUpdate, move_snake.run_if(in_state(GameState::Playing)));
         app.add_systems(OnExit(GameState::Playing), save_score);
+        app.insert_resource(Time::<Fixed>::from_seconds(0.1));
     }
 }
 
@@ -39,7 +41,7 @@ enum CellContents {
     Food,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 enum Direction {
     Up,
     Down,
@@ -49,6 +51,19 @@ enum Direction {
 
 #[derive(Component)]
 struct Position(usize, usize);
+
+impl Position {
+    fn get_next_position(&self, dir: Direction) -> Self {
+        let Position(x, y) = *self;
+
+        match dir {
+            Direction::Up => Self(x, y + 1),
+            Direction::Down => Self(x, y - 1),
+            Direction::Left => Self(x - 1, y),
+            Direction::Right => Self(x + 1, y),
+        }
+    }
+}
 
 #[derive(Bundle)]
 struct CellBundle(StateScoped<GameState>, Position, Sprite, Transform);
@@ -86,6 +101,7 @@ struct Game {
     current_direction: Direction,
     next_direction: Direction,
     snake: VecDeque<Entity>,
+    head: Position,
 }
 
 impl Game {
@@ -115,6 +131,7 @@ impl Game {
             current_direction: INITIAL_DIRECTION,
             next_direction: INITIAL_DIRECTION,
             snake: VecDeque::new(),
+            head: Position(0, 0),
         }
     }
 
@@ -125,6 +142,15 @@ impl Game {
         };
 
         pos - self.middle
+    }
+
+    fn move_snake(&mut self, x: usize, y: usize) -> CellContents {
+        let contents = *self.grid.get(x, y);
+        *self.grid.get_mut(x, y) = CellContents::Snake;
+
+        self.head = Position(x, y);
+
+        contents
     }
 }
 
@@ -155,6 +181,12 @@ fn spawn_snake(mut commands: Commands, mut game: ResMut<Game>) {
     let x = INITIAL_SNAKE_X;
     let y = game.grid.height() / 2;
 
+    let contents = game.move_snake(x, y);
+    assert!(
+        matches!(contents, CellContents::Empty),
+        "Expected initial position to be empty"
+    );
+
     let entity = commands
         .spawn(CellBundle::new(CellContents::Snake, x, y, &game))
         .id();
@@ -182,8 +214,21 @@ fn read_input(keyboard_input: Res<ButtonInput<KeyCode>>, mut game: ResMut<Game>)
     }
 }
 
+fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
+    let Position(x, y) = game.head.get_next_position(game.next_direction);
+    game.current_direction = game.next_direction;
+
+    game.move_snake(x, y);
+
+    let entity = commands
+        .spawn(CellBundle::new(CellContents::Snake, x, y, &game))
+        .id();
+
+    game.snake.push_back(entity);
+}
+
 fn game_setup(mut commands: Commands) {
-    commands.insert_resource(GameTimer(Timer::from_seconds(2.0, TimerMode::Once)));
+    commands.insert_resource(GameTimer(Timer::from_seconds(10.0, TimerMode::Once)));
 }
 
 fn check_timer(
