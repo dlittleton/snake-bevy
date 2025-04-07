@@ -1,3 +1,4 @@
+mod cell;
 mod constants;
 mod grid;
 mod position;
@@ -7,12 +8,13 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_prng::WyRand;
 use bevy_rand::prelude::GlobalEntropy;
+use cell::{CellBundle, CellContents};
 use constants::*;
 use grid::Grid;
 use position::{Direction, Position};
 use rand_core::RngCore;
 
-use crate::{colors::GameColors, score::Score, state::GameState};
+use crate::{score::Score, state::GameState};
 
 pub struct GamePlugin;
 
@@ -31,39 +33,6 @@ impl Plugin for GamePlugin {
         );
         app.add_systems(OnExit(GameState::Playing), save_score);
         app.insert_resource(Time::<Fixed>::from_seconds(0.1));
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum CellContents {
-    Empty,
-    Snake,
-    Wall,
-    Food,
-}
-
-#[derive(Bundle)]
-struct CellBundle(StateScoped<GameState>, Position, Sprite, Transform);
-
-impl CellBundle {
-    fn new(contents: CellContents, x: usize, y: usize, game: &Game) -> Self {
-        Self(
-            StateScoped(GameState::Playing),
-            Position(x, y),
-            Sprite::from_color(
-                match contents {
-                    CellContents::Food => GameColors::FOOD,
-                    CellContents::Snake => GameColors::PRIMARY,
-                    CellContents::Wall => GameColors::WALL,
-                    CellContents::Empty => panic!("Attempt to spawn cell contents"),
-                },
-                Vec2::new(CELL_SIZE, CELL_SIZE),
-            ),
-            Transform {
-                translation: game.get_coords(x, y).extend(1.0),
-                ..default()
-            },
-        )
     }
 }
 
