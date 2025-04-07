@@ -8,6 +8,9 @@ pub enum Direction {
     Right,
 }
 
+/**
+ * Grid position associated with an entity.
+ */
 #[derive(Component)]
 pub struct Position(pub usize, pub usize);
 

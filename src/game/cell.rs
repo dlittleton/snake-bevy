@@ -10,6 +10,10 @@ pub enum CellContents {
     Food,
 }
 
+/**
+ * Collection of components for an individual grid cell.
+ * Could represent the snake, a wall, or food.
+ */
 #[derive(Bundle)]
 pub struct CellBundle(StateScoped<GameState>, Position, Sprite, Transform);
 
