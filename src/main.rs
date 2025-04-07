@@ -4,13 +4,7 @@ pub mod menu;
 pub mod score;
 pub mod state;
 
-use bevy::{
-    prelude::*,
-    render::{
-        RenderPlugin,
-        settings::{Backends, RenderCreation, WgpuSettings},
-    },
-};
+use bevy::prelude::*;
 use bevy_prng::WyRand;
 use bevy_rand::prelude::EntropyPlugin;
 use colors::GameColors;
@@ -25,13 +19,7 @@ fn setup(mut commands: Commands) {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(RenderPlugin {
-            render_creation: RenderCreation::Automatic(WgpuSettings {
-                backends: Some(Backends::VULKAN),
-                ..default()
-            }),
-            ..default()
-        }))
+        .add_plugins(DefaultPlugins)
         .add_plugins(EntropyPlugin::<WyRand>::default())
         .add_systems(Startup, setup)
         .init_state::<GameState>()
