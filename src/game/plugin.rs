@@ -245,5 +245,4 @@ fn save_score(mut score: ResMut<Score>, game: Res<Game>) {
     score.current = round;
     score.best = round.max(score.best);
     info!("Score updated {:?}", score);
-    info!("Direction is {:?}", game.next_direction);
 }
