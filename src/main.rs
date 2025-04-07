@@ -11,6 +11,8 @@ use bevy::{
         settings::{Backends, RenderCreation, WgpuSettings},
     },
 };
+use bevy_prng::WyRand;
+use bevy_rand::prelude::EntropyPlugin;
 use colors::GameColors;
 use game::GamePlugin;
 use menu::MenuPlugin;
@@ -30,6 +32,7 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins(EntropyPlugin::<WyRand>::default())
         .add_systems(Startup, setup)
         .init_state::<GameState>()
         .enable_state_scoped_entities::<GameState>()

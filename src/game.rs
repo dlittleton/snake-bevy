@@ -3,7 +3,10 @@ mod grid;
 use std::collections::VecDeque;
 
 use bevy::prelude::*;
+use bevy_prng::WyRand;
+use bevy_rand::prelude::GlobalEntropy;
 use grid::Grid;
+use rand_core::RngCore;
 
 use crate::{colors::GameColors, score::Score, state::GameState};
 
@@ -18,7 +21,7 @@ impl Plugin for GamePlugin {
         app.add_systems(Update, read_input.run_if(in_state(GameState::Playing)));
         app.add_systems(
             FixedUpdate,
-            (despawn_tail, move_snake)
+            (despawn_tail, move_snake, spawn_food)
                 .chain()
                 .run_if(in_state(GameState::Playing)),
         );
@@ -98,6 +101,7 @@ struct Game {
     next_direction: Direction,
     snake: VecDeque<Entity>,
     head: Position,
+    food: Option<Entity>,
 }
 
 impl Game {
@@ -128,6 +132,7 @@ impl Game {
             next_direction: INITIAL_DIRECTION,
             snake: VecDeque::new(),
             head: Position(0, 0),
+            food: None,
         }
     }
 
@@ -157,6 +162,23 @@ impl Game {
         );
 
         *p = CellContents::Empty;
+    }
+
+    fn place_food(&mut self, mut rng: GlobalEntropy<WyRand>) -> Position {
+        // Walls on both ends
+        let xrange = self.grid.width() as u64 - 2;
+        let yrange = self.grid.height() as u64 - 2;
+
+        loop {
+            let x = ((rng.next_u64() % xrange) + 1) as usize;
+            let y = ((rng.next_u64() % yrange) + 1) as usize;
+
+            let p = self.grid.get_mut(x, y);
+            if matches!(p, CellContents::Empty) {
+                *p = CellContents::Food;
+                return Position(x, y);
+            }
+        }
     }
 }
 
@@ -248,6 +270,18 @@ fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
         .id();
 
     game.snake.push_back(entity);
+}
+
+fn spawn_food(mut commands: Commands, mut game: ResMut<Game>, rng: GlobalEntropy<WyRand>) {
+    if game.food.is_none() {
+        let Position(x, y) = game.place_food(rng);
+
+        let entity = commands
+            .spawn(CellBundle::new(CellContents::Food, x, y, &game))
+            .id();
+
+        game.food = Some(entity);
+    }
 }
 
 fn save_score(mut score: ResMut<Score>, game: Res<Game>) {
