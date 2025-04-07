@@ -1,4 +1,5 @@
 mod grid;
+mod position;
 
 use std::collections::VecDeque;
 
@@ -6,6 +7,7 @@ use bevy::prelude::*;
 use bevy_prng::WyRand;
 use bevy_rand::prelude::GlobalEntropy;
 use grid::Grid;
+use position::{Direction, Position};
 use rand_core::RngCore;
 
 use crate::{colors::GameColors, score::Score, state::GameState};
@@ -42,30 +44,6 @@ enum CellContents {
     Snake,
     Wall,
     Food,
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
-#[derive(Component)]
-struct Position(usize, usize);
-
-impl Position {
-    fn get_next_position(&self, dir: Direction) -> Self {
-        let Position(x, y) = *self;
-
-        match dir {
-            Direction::Up => Self(x, y + 1),
-            Direction::Down => Self(x, y - 1),
-            Direction::Left => Self(x - 1, y),
-            Direction::Right => Self(x + 1, y),
-        }
-    }
 }
 
 #[derive(Bundle)]
