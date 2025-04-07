@@ -1,3 +1,4 @@
+mod constants;
 mod grid;
 mod position;
 
@@ -6,6 +7,7 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_prng::WyRand;
 use bevy_rand::prelude::GlobalEntropy;
+use constants::*;
 use grid::Grid;
 use position::{Direction, Position};
 use rand_core::RngCore;
@@ -31,12 +33,6 @@ impl Plugin for GamePlugin {
         app.insert_resource(Time::<Fixed>::from_seconds(0.1));
     }
 }
-
-const CELL_SIZE: f32 = 10.0;
-const INITIAL_LENGTH: usize = 5;
-const INITIAL_DIRECTION: Direction = Direction::Right;
-const INITIAL_SNAKE_X: usize = 5;
-const SNAKE_GROWTH_RATE: usize = 5;
 
 #[derive(Clone, Copy, Debug)]
 enum CellContents {
