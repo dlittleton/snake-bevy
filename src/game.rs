@@ -34,6 +34,7 @@ const CELL_SIZE: f32 = 10.0;
 const INITIAL_LENGTH: usize = 5;
 const INITIAL_DIRECTION: Direction = Direction::Right;
 const INITIAL_SNAKE_X: usize = 5;
+const SNAKE_GROWTH_RATE: usize = 5;
 
 #[derive(Clone, Copy, Debug)]
 enum CellContents {
@@ -263,6 +264,14 @@ fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
         // Collision. Game over!
         commands.set_state(GameState::Menu);
         return;
+    } else if matches!(contents, CellContents::Food) {
+        if let Some(food) = game.food {
+            // Grid is already cleared by moving the snake, despawn food entity.
+            commands.entity(food).despawn();
+            game.food = None;
+
+            game.max_length += SNAKE_GROWTH_RATE;
+        }
     }
 
     let entity = commands
