@@ -1,4 +1,4 @@
-use super::{Game, constants::CELL_SIZE, position::Position};
+use super::{constants::CELL_SIZE, position::Position};
 use crate::{colors::GameColors, state::GameState};
 use bevy::prelude::*;
 
@@ -13,8 +13,41 @@ pub enum CellContents {
 #[derive(Bundle)]
 pub struct CellBundle(StateScoped<GameState>, Position, Sprite, Transform);
 
+/**
+ * Handles converting between grid coordinate and screen coordinates for sprites.
+ */
+#[derive(Resource)]
+pub struct CoordinateTranslator {
+    middle: Vec2,
+}
+
+impl CoordinateTranslator {
+    pub fn new(width: usize, height: usize) -> Self {
+        let middle = Vec2 {
+            x: (width - 1) as f32 * CELL_SIZE / 2.0,
+            y: (height - 1) as f32 * CELL_SIZE / 2.0,
+        };
+
+        Self { middle }
+    }
+
+    pub fn get_coords(&self, x: usize, y: usize) -> Vec2 {
+        let pos = Vec2 {
+            x: x as f32 * CELL_SIZE,
+            y: y as f32 * CELL_SIZE,
+        };
+
+        pos - self.middle
+    }
+}
+
 impl CellBundle {
-    pub fn new(contents: CellContents, x: usize, y: usize, game: &Game) -> Self {
+    pub fn new(
+        contents: CellContents,
+        x: usize,
+        y: usize,
+        translator: &CoordinateTranslator,
+    ) -> Self {
         Self(
             StateScoped(GameState::Playing),
             Position(x, y),
@@ -28,7 +61,7 @@ impl CellBundle {
                 Vec2::new(CELL_SIZE, CELL_SIZE),
             ),
             Transform {
-                translation: game.get_coords(x, y).extend(1.0),
+                translation: translator.get_coords(x, y).extend(1.0),
                 ..default()
             },
         )

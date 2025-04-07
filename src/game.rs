@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_prng::WyRand;
 use bevy_rand::prelude::GlobalEntropy;
-use cell::{CellBundle, CellContents};
+use cell::{CellBundle, CellContents, CoordinateTranslator};
 use constants::*;
 use grid::Grid;
 use position::{Direction, Position};
@@ -39,7 +39,6 @@ impl Plugin for GamePlugin {
 #[derive(Resource)]
 struct Game {
     grid: Grid<CellContents>,
-    middle: Vec2,
     max_length: usize,
     current_direction: Direction,
     next_direction: Direction,
@@ -63,14 +62,8 @@ impl Game {
             *grid.get_mut(width - 1, y) = CellContents::Wall;
         }
 
-        let middle = Vec2 {
-            x: (width - 1) as f32 * CELL_SIZE / 2.0,
-            y: (height - 1) as f32 * CELL_SIZE / 2.0,
-        };
-
         Self {
             grid,
-            middle,
             max_length: INITIAL_LENGTH,
             current_direction: INITIAL_DIRECTION,
             next_direction: INITIAL_DIRECTION,
@@ -78,15 +71,6 @@ impl Game {
             head: Position(0, 0),
             food: None,
         }
-    }
-
-    fn get_coords(&self, x: usize, y: usize) -> Vec2 {
-        let pos = Vec2 {
-            x: x as f32 * CELL_SIZE,
-            y: y as f32 * CELL_SIZE,
-        };
-
-        pos - self.middle
     }
 
     fn move_snake(&mut self, x: usize, y: usize) -> CellContents {
@@ -137,19 +121,25 @@ fn init_game(mut commands: Commands, window_query: Query<&Window>) {
 
     info!("Grid size is {} x {}", width, height);
     let game = Game::new(width, height);
+    let coord_translator = CoordinateTranslator::new(width, height);
 
     commands.insert_resource(game);
+    commands.insert_resource(coord_translator);
 }
 
-fn spawn_walls(mut commands: Commands, game: Res<Game>) {
+fn spawn_walls(mut commands: Commands, game: Res<Game>, translator: Res<CoordinateTranslator>) {
     for (x, y, c) in game.grid.enumerate() {
         if matches!(c, CellContents::Wall) {
-            commands.spawn(CellBundle::new(CellContents::Wall, x, y, &game));
+            commands.spawn(CellBundle::new(CellContents::Wall, x, y, &translator));
         }
     }
 }
 
-fn spawn_snake(mut commands: Commands, mut game: ResMut<Game>) {
+fn spawn_snake(
+    mut commands: Commands,
+    mut game: ResMut<Game>,
+    translator: Res<CoordinateTranslator>,
+) {
     let x = INITIAL_SNAKE_X;
     let y = game.grid.height() / 2;
 
@@ -160,7 +150,7 @@ fn spawn_snake(mut commands: Commands, mut game: ResMut<Game>) {
     );
 
     let entity = commands
-        .spawn(CellBundle::new(CellContents::Snake, x, y, &game))
+        .spawn(CellBundle::new(CellContents::Snake, x, y, &translator))
         .id();
 
     game.snake.push_back(entity);
@@ -198,7 +188,11 @@ fn despawn_tail(mut commands: Commands, mut game: ResMut<Game>, pos_query: Query
     }
 }
 
-fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
+fn move_snake(
+    mut commands: Commands,
+    mut game: ResMut<Game>,
+    translator: Res<CoordinateTranslator>,
+) {
     let Position(x, y) = game.head.get_next_position(game.next_direction);
     game.current_direction = game.next_direction;
 
@@ -218,18 +212,23 @@ fn move_snake(mut commands: Commands, mut game: ResMut<Game>) {
     }
 
     let entity = commands
-        .spawn(CellBundle::new(CellContents::Snake, x, y, &game))
+        .spawn(CellBundle::new(CellContents::Snake, x, y, &translator))
         .id();
 
     game.snake.push_back(entity);
 }
 
-fn spawn_food(mut commands: Commands, mut game: ResMut<Game>, rng: GlobalEntropy<WyRand>) {
+fn spawn_food(
+    mut commands: Commands,
+    mut game: ResMut<Game>,
+    translator: Res<CoordinateTranslator>,
+    rng: GlobalEntropy<WyRand>,
+) {
     if game.food.is_none() {
         let Position(x, y) = game.place_food(rng);
 
         let entity = commands
-            .spawn(CellBundle::new(CellContents::Food, x, y, &game))
+            .spawn(CellBundle::new(CellContents::Food, x, y, &translator))
             .id();
 
         game.food = Some(entity);
