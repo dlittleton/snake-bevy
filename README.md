@@ -2,6 +2,17 @@
 
 Basic snake clone created in [Bevy](https://bevyengine.org/).
 
+# Producing a wasm Build
+
+The following commands are used to produce the `.wasm` and `.js` files required
+for running the game in a browser.
+
+```
+cargo build --target wasm32-unknown-unknown --release
+wasm-bindgen --no-typescript --target web --out-dir ./out --out-name snake-bevy .\target\wasm32-unknown-unknown\release\snake-bevy.wasm
+wasm-opt -Oz .\out\snake-bevy_bg.wasm -o .\out\snake-bevy_bg.opt.wasm
+```
+
 # Known Issues
 
 ## INVALID_SUBRESOURCE_STATE Errors in Console 
