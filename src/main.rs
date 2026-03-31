@@ -29,7 +29,6 @@ fn main() {
         .add_plugins(EntropyPlugin::<WyRand>::default())
         .add_systems(Startup, setup)
         .init_state::<GameState>()
-        .enable_state_scoped_entities::<GameState>()
         .insert_resource(ClearColor(GameColors::BACKGROUND))
         .insert_resource(Score {
             current: 0,

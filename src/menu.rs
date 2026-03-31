@@ -37,7 +37,7 @@ fn menu_setup(mut commands: Commands, score: Res<Score>) {
     info!("Setting up menu state");
     commands
         .spawn((
-            StateScoped(GameState::Menu),
+            DespawnOnExit(GameState::Menu),
             Node {
                 // General screen container to center children
                 width: Val::Percent(100.0),

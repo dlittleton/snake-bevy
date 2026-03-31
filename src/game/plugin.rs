@@ -6,8 +6,8 @@ use super::grid::Grid;
 use super::position::{Direction, Position};
 use bevy::prelude::*;
 use bevy_prng::WyRand;
-use bevy_rand::prelude::GlobalEntropy;
-use rand_core::RngCore;
+use bevy_rand::prelude::GlobalRng;
+use rand_core::Rng;
 
 use crate::{score::Score, state::GameState};
 
@@ -95,7 +95,7 @@ impl Game {
         *p = CellContents::Empty;
     }
 
-    fn place_food(&mut self, mut rng: GlobalEntropy<WyRand>) -> Position {
+    fn place_food(&mut self, mut rng: Single<&mut WyRand, With<GlobalRng>>) -> Position {
         // Walls on both ends
         let xrange = self.grid.width() as u64 - 2;
         let yrange = self.grid.height() as u64 - 2;
@@ -116,7 +116,7 @@ impl Game {
 fn init_game(mut commands: Commands, window_query: Query<&Window>) {
     info!("Initializing game state");
 
-    let window = window_query.single();
+    let window = window_query.single().expect("Failed to get window");
     info!("Window size is {} x {}", window.width(), window.height());
 
     let width = (window.width() / CELL_SIZE).floor() as usize;
@@ -225,7 +225,7 @@ fn spawn_food(
     mut commands: Commands,
     mut game: ResMut<Game>,
     translator: Res<CoordinateTranslator>,
-    rng: GlobalEntropy<WyRand>,
+    rng: Single<&mut WyRand, With<GlobalRng>>,
 ) {
     if game.food.is_none() {
         let Position(x, y) = game.place_food(rng);

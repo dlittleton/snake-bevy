@@ -15,7 +15,7 @@ pub enum CellContents {
  * Could represent the snake, a wall, or food.
  */
 #[derive(Bundle)]
-pub struct CellBundle(StateScoped<GameState>, Position, Sprite, Transform);
+pub struct CellBundle(DespawnOnExit<GameState>, Position, Sprite, Transform);
 
 /**
  * Handles converting between grid coordinate and screen coordinates for sprites.
@@ -53,7 +53,7 @@ impl CellBundle {
         translator: &CoordinateTranslator,
     ) -> Self {
         Self(
-            StateScoped(GameState::Playing),
+            DespawnOnExit(GameState::Playing),
             Position(x, y),
             Sprite::from_color(
                 match contents {
