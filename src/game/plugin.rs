@@ -204,14 +204,14 @@ fn move_snake(
         // Collision. Game over!
         commands.set_state(GameState::Menu);
         return;
-    } else if matches!(contents, CellContents::Food) {
-        if let Some(food) = game.food {
-            // Grid is already cleared by moving the snake, despawn food entity.
-            commands.entity(food).despawn();
-            game.food = None;
+    } else if matches!(contents, CellContents::Food)
+        && let Some(food) = game.food
+    {
+        // Grid is already cleared by moving the snake, despawn food entity.
+        commands.entity(food).despawn();
+        game.food = None;
 
-            game.max_length += SNAKE_GROWTH_RATE;
-        }
+        game.max_length += SNAKE_GROWTH_RATE;
     }
 
     let entity = commands
