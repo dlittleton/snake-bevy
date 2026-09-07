@@ -7,7 +7,7 @@ edition = "2024"
 bevy = "0.18.1"
 bevy_prng = { version = "0.14.2", features = ["wyrand"] }
 bevy_rand = { version = "0.14.2" }
-rand_core = "0.10.0"
+rand_core = "0.10.1"
 
 [profile.release]
 opt-level = 'z'
