@@ -21,7 +21,7 @@ impl TextBundle {
         Self(
             Text::new(text),
             TextFont {
-                font_size: MENU_FONT_SIZE,
+                font_size: FontSize::Px(MENU_FONT_SIZE),
                 ..default()
             },
             TextColor(GameColors::PRIMARY),
